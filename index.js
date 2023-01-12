@@ -4,7 +4,12 @@ const Jimp = require('jimp');
 const csv = require('csvtojson');
 const csvFilePath = './Magic.csv';
 
+// 1. Tocar la función para guardar las imagenes recortadas, de manera que sólo aparece la imagen de la carta.
+// 2. Tocar el .csv de Magic para añadir tres nuevas columnas, Imagen, Imagen recortada y ID.
 
+
+
+// Para convertir el csv en json y añadirle un id a cada carta.
 // csv()
 // .fromFile(csvFilePath)
 // .then((jsonObj)=>{
@@ -18,14 +23,17 @@ const csvFilePath = './Magic.csv';
 //     });
 // })
 
+// Para extraer las imagenes de las cartas.
 // const images = [];
 // const json = require('./Magic.json');
 // for (const card of json) {
 //     images.push(card.Enlace);
 // };
 
+// Crear un json con las imagenes de las cartas.
 const objetoImages = {};
 
+// Extrae las imagenes de las cartas mediante peticiones HTTP.
 const extractor = async (json) => {
     try {
         const response = await axios({
@@ -43,6 +51,7 @@ const extractor = async (json) => {
     }
 };
 
+// Itera sobre el json de las cartas y extrae las imagenes con extractor().
 const iterador = async (json) => {
     let j = 0;
     for (const card of json) {
@@ -61,67 +70,90 @@ const iterador = async (json) => {
     };
     fs.writeFileSync('./listadefotosdef.json', JSON.stringify(objetoImages));
 };
-
 // const json = require('./magicConIds.json');
 // iterador(json)
 
-const downloader = async (id, field) => {
-    Jimp.read(field)
-        .then(function (image) {
-            console.log(image)
-            image.write(`./imagenes/${id}.jpg`);
-        })
-        .catch(function (err) {
-            return console.log('error', err);
-        });
+// Descarga las imagenes de las cartas y las guarda en la carpeta imagenes.
+const imageDownloader = async (id, field) => {
+    return new Promise((resolve, reject) => {
+        Jimp.read(field)
+            .then(function (image) {
+                image.write(`./imagenes/${id}.jpg`);
+                resolve();
+            })
+            .catch(function (err) {
+                console.log('error', err);
+                reject(err);
+            })
+    })
 };
 
+// Descarga las imagenes de las cartas y las guarda en la carpeta imagenes_recortadas.
+const croppedImagesDownloader = async (id, field) => {
+    return new Promise((resolve, reject) => {
+        Jimp.read(field)
+            .then(function (image) {
+                image.resize(255, 361)
+                image.crop(15, 36, 224, 165);
+                image.write(`./imagenes_recortadas/${id}_cropped.jpg`);
+                resolve();
+            })
+            .catch(function (err) {
+                console.log('error', err);
+                reject(err);
+            })
+    })
+};
+
+// Iterar sobre el json de las imagenes y descargarlas.
 
 const json = require('./listadefotosdef.json');
 const funcionIteradora = async () => {
     try {
         for (const [id, url] of Object.entries(json)) {
             console.log(id);
-            await downloader(id, url)
+            await imageDownloader(id, url);
+            await croppedImagesDownloader(id, url);
         }
     } catch (error) {
         console.log('error', error)
     }
-}
+};
+
 funcionIteradora(json);
 
-const imageDownloader = async (data = { id, imageUrl }) => {
-    return new Promise((resolve, reject) => {
-        try {
-            const { id, imageUrl } = data;
-            if (!imageUrl) {
-                reject('Falta algo!' + data);
-                return;
-            }
+// const imageDownloader = async (data = { id, imageUrl }) => {
+//     return new Promise((resolve, reject) => {
+//         try {
+//             const { id, imageUrl } = data;
+//             if (!imageUrl) {
+//                 reject('Falta algo!' + data);
+//                 return;
+//             }
 
-            const imagenCardPromise = Jimp.read(imageUrl).catch(err => { console.log('ERROR'); console.log(err); return });
+//             const imagenCardPromise = Jimp.read(imageUrl).catch(err => { console.log('ERROR'); console.log(err); return });
 
-            Promise.all([imagenCardPromise])
-                .then(async function (images) {
-                    const imagenCard = images[0];
-                    if (!imagenCard) {
-                        throw new Error('No se pudo encontrar alguno de los componentes basicos de marker');
-                    }
-                    imagenCard
-                        .getBuffer(Jimp.MIME_JPEG, async (err, buffer) => {
-                            if (err) {
-                                console.log(err); reject(err);
-                            } else {
-                                const imageFileName = `./imagenes/${id}.jpg`
-                                fs.writeFileSync(imageFileName, buffer);
-                                resolve(imageFileName);
-                            };
-                        });
-                }).catch(err => { console.log('error creadorMarkerTotal'); console.log(err); reject(err); });
-        } catch (e) {
-            console.log('ERROR')
-            console.log(e);
-            resolve(er);
-        }
-    });
-};
+//             Promise.all([imagenCardPromise])
+//                 .then(async function (images) {
+//                     const imagenCard = images[0];
+//                     if (!imagenCard) {
+//                         throw new Error('No se pudo encontrar alguno de los componentes basicos de marker');
+//                     }
+//                     imagenCard
+//                         .getBuffer(Jimp.MIME_JPEG, async (err, buffer) => {
+//                             if (err) {
+//                                 console.log(err); reject(err);
+//                             } else {
+//                                 const imageFileName = `./imagenes/${id}.jpg`
+//                                 fs.writeFileSync(imageFileName, buffer);
+//                                 resolve(imageFileName);
+//                             };
+//                         });
+//                 }).catch(err => { console.log('error creadorMarkerTotal'); console.log(err); reject(err); });
+//         } catch (e) {
+//             console.log('ERROR')
+//             console.log(e);
+//             resolve(er);
+//         }
+//     });
+// };
