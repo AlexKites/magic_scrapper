@@ -106,54 +106,17 @@ const croppedImagesDownloader = async (id, field) => {
 };
 
 // Iterar sobre el json de las imagenes y descargarlas.
-
 const json = require('./listadefotosdef.json');
 const funcionIteradora = async () => {
-    try {
-        for (const [id, url] of Object.entries(json)) {
+    for (const [id, url] of Object.entries(json)) {
+        try {
             console.log(id);
             await imageDownloader(id, url);
             await croppedImagesDownloader(id, url);
+        } catch (error) {
+            console.log('error', error);
+            continue;
         }
-    } catch (error) {
-        console.log('error', error)
     }
 };
-
 funcionIteradora(json);
-
-// const imageDownloader = async (data = { id, imageUrl }) => {
-//     return new Promise((resolve, reject) => {
-//         try {
-//             const { id, imageUrl } = data;
-//             if (!imageUrl) {
-//                 reject('Falta algo!' + data);
-//                 return;
-//             }
-
-//             const imagenCardPromise = Jimp.read(imageUrl).catch(err => { console.log('ERROR'); console.log(err); return });
-
-//             Promise.all([imagenCardPromise])
-//                 .then(async function (images) {
-//                     const imagenCard = images[0];
-//                     if (!imagenCard) {
-//                         throw new Error('No se pudo encontrar alguno de los componentes basicos de marker');
-//                     }
-//                     imagenCard
-//                         .getBuffer(Jimp.MIME_JPEG, async (err, buffer) => {
-//                             if (err) {
-//                                 console.log(err); reject(err);
-//                             } else {
-//                                 const imageFileName = `./imagenes/${id}.jpg`
-//                                 fs.writeFileSync(imageFileName, buffer);
-//                                 resolve(imageFileName);
-//                             };
-//                         });
-//                 }).catch(err => { console.log('error creadorMarkerTotal'); console.log(err); reject(err); });
-//         } catch (e) {
-//             console.log('ERROR')
-//             console.log(e);
-//             resolve(er);
-//         }
-//     });
-// };
